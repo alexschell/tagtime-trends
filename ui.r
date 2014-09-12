@@ -16,14 +16,18 @@ shinyUI(fluidPage(
       
       br(), 
       
+      uiOutput("daterangeUI"),  
+      
       selectInput(inputId = "n.bins",
                   label = "Number of bins in the histogram:",
                   choices = c(10, 15, 20, 30, 50),
                   selected = 15),
       
       sliderInput("bandwidth", 
-        label = "Density estimate smoothness:",
-        min = 0.3, max = 1, value = 0.85)
+                  label = "Density estimate smoothness:",
+                  min = 0.3, 
+                  max = 1, 
+                  value = 0.85)
     ),
   
     mainPanel(plotOutput("hist"))

@@ -18,9 +18,31 @@ shinyServer(
     
     output$description <- renderText({
       descriptions[which(input$tag == choices)]
-    }) 
+    })
+    
+    output$daterangeUI <- renderUI({
+      dateRangeInput("daterange", 
+        label = "Time frame to display:", 
+        start = as.Date(as.POSIXct(min(dat$time), origin = "1970-01-01")), 
+        end = as.Date(as.POSIXct(max(dat$time), origin = "1970-01-01"))
+      )
+    })
     
     output$hist <- renderPlot({
+      if (!is.null(input$daterange)) {
+        starttime <- paste(input$daterange[1], "12:00:00")
+        starttime <- as.numeric(as.POSIXct(starttime))
+        endtime <- paste(as.Date(input$daterange[2] + 1), "12:00:00")
+        endtime <- as.numeric(as.POSIXct(endtime))
+        in.range <- dat$time >= starttime & dat$time < endtime
+      } else {
+        in.range <- NULL
+      }
+      if (!is.null(in.range)) {
+        # the subsetting is temporary
+        dat <- dat[in.range,]
+        mat <- mat[in.range,]
+      }
       n.breaks <- as.numeric(input$n.bins) + 1
       breaks <- seq(min(dat$time), max(dat$time), length = n.breaks)
       bin.width <- diff(breaks[1:2])  # histogram bin width in seconds
