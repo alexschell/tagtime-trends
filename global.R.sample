@@ -1,0 +1,58 @@
+# Customize this and rename to global.R before running the app.
+
+logfile.url <- "http://your/tagtime/log/file/url"  # CHANGEME
+
+ping.interval <- 45  # mean waiting time between pings in minutes (default 45)
+
+perl <- FALSE  # whether to use PERL syntax for regular expressions
+
+# A vector of tags or regular expressions to display data of
+tags <- c(
+  "prod3", 
+  "prod0", 
+  "proj|code|stats| r | ml |igf|auto|website|write", 
+  "auto", 
+  "school|class|hw", 
+  "work", 
+  "slp", 
+  "drive", 
+  "social|im", 
+  "email|sms|phonecall", 
+  "favor", 
+  "net", 
+  "tagtime|pfeedback", 
+  "outside|garden")  # CHANGEME
+
+# Vector of names for the elements of the tags vector
+choices <- c(
+  "Productivity", 
+  "Wasted time", 
+  "Projects", 
+  "Autodidacticism", 
+  "School", 
+  "Work", 
+  "Sleep", 
+  "Driving", 
+  "Social time", 
+  "Communication", 
+  "Favors", 
+  "Web browsing", 
+  "Self tracking", 
+  "Time spent outside")  # CHANGEME
+
+# Vector of descriptions for the elements of the tags vector
+descriptions <- c(
+  "Productive time in domains such as personal projects, school, and work (less than full attention doesn't count)", 
+  "Things like Netflix, aimless web browsing, Facebook, and daydreaming", 
+  "Personal projects including autodidacticism, coding, statistics, writing, and so on (school or work don't count)", 
+  "Focused learning from books, tutorials, online lectures, and the like (school doesn't count)", 
+  "Class time, homework, and studying", 
+  "Gainful employment", 
+  "zzZZZzz (includes daytime naps)", 
+  "Time spent in a moving vehicle", 
+  "Social interaction in real time", 
+  "Emails, phone calls, texting", 
+  "Things done for other people", 
+  "Aimless browsing, catching up on blogs, and so on (usually wasteful)", 
+  "Time spent answering TagTime pings, entering percentile feedback data, or otherwise maintaining these", 
+  "What it says")  # CHANGEME
