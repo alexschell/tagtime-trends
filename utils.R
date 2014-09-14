@@ -8,7 +8,6 @@ splitTimestamp <- function(timestamp, tz = "", midnight = 0, hrs = TRUE) {
   } else {
     midnight <- paste(midnight, ":00:00", sep = "")
   }
-  print (midnight)
   day <- as.Date(substr(as.POSIXct(timestamp, origin = "1970-01-01"), 1, 10))
   mn <- as.numeric(as.POSIXct(paste(day, midnight)))
   mn <- ifelse(mn > timestamp, 

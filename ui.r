@@ -18,18 +18,35 @@ shinyUI(fluidPage(
       
       uiOutput("daterangeUI"),  
       
-      selectInput(inputId = "n.bins",
-                  label = "Number of bins in the histogram:",
-                  choices = c(10, 15, 20, 30, 50),
-                  selected = 15),
+      conditionalPanel(
+        condition = "input.tabID == 1", 
+        selectInput(inputId = "n.bins",
+                    label = "Number of bins in the histogram:",
+                    choices = c(10, 15, 20, 30, 50),
+                    selected = 15),
+        
+        sliderInput("bandwidth", 
+                    label = "Density estimate smoothness:",
+                    min = 0.3, 
+                    max = 1, 
+                    value = 0.85)
+      ), 
       
-      sliderInput("bandwidth", 
-                  label = "Density estimate smoothness:",
-                  min = 0.3, 
-                  max = 1, 
-                  value = 0.85)
+      conditionalPanel(
+        condition = "input.tabID == 2", 
+        selectInput("midnight", 
+                    label = "Custom midnight:", 
+                    choices = 0:23, 
+                    selected = 0)
+      )
     ),
   
-    mainPanel(plotOutput("hist"))
+    # mainPanel(plotOutput("hist"))
+    mainPanel(
+      tabsetPanel(type = "tabs", 
+        tabPanel("Trend", plotOutput("hist"), value = 1), 
+        tabPanel("Matrix", plotOutput("matrix"), value = 2), 
+        id = "tabID")
+    )
   )
 ))

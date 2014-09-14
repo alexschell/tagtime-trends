@@ -1,4 +1,5 @@
 require("httr")
+source("utils.R")
 
 shinyServer(
   function(input, output) {
@@ -26,28 +27,41 @@ shinyServer(
       )
     })
     
-    output$hist <- renderPlot({
+    timeframe <- reactive({
       if (!is.null(input$daterange)) {
-        starttime <- paste(input$daterange[1], "12:00:00")
+        starttime <- paste(input$daterange[1], "00:00:00")
         starttime <- as.numeric(as.POSIXct(starttime))
-        endtime <- paste(as.Date(input$daterange[2] + 1), "12:00:00")
+        endtime <- paste(as.Date(input$daterange[2] + 1), "00:00:00")
         endtime <- as.numeric(as.POSIXct(endtime))
         timeframe <- dat$time >= starttime & dat$time < endtime
       } else {
         timeframe <- rep(TRUE, nrow(dat))
       }
+      timeframe
+    })
+    
+    output$hist <- renderPlot({
+      # if (!is.null(input$daterange)) {
+        # starttime <- paste(input$daterange[1], "12:00:00")
+        # starttime <- as.numeric(as.POSIXct(starttime))
+        # endtime <- paste(as.Date(input$daterange[2] + 1), "12:00:00")
+        # endtime <- as.numeric(as.POSIXct(endtime))
+        # timeframe <- dat$time >= starttime & dat$time < endtime
+      # } else {
+        # timeframe <- rep(TRUE, nrow(dat))
+      # }
       n.breaks <- as.numeric(input$n.bins) + 1
-      breaks <- seq(min(dat$time[timeframe]), 
-                    max(dat$time[timeframe]), 
+      breaks <- seq(min(dat$time[timeframe()]), 
+                    max(dat$time[timeframe()]), 
                     length = n.breaks)
       bin.width <- diff(breaks[1:2])  # histogram bin width in seconds
       n.cat <- which(input$cat == catnames)
       uptime <- dat$time[mat[,n.cat]]
-      uptime.sub <- dat$time[timeframe][mat[timeframe, n.cat]]
-      # better solution here?
-      xlab.int <- seq(min(dat$time[timeframe]), 
-                         max(dat$time[timeframe]), 
-                         length = 8)
+      uptime.sub <- dat$time[timeframe()][mat[timeframe(), n.cat]]
+      # better solution here? ^^^
+      xlab.int <- seq(min(dat$time[timeframe()]), 
+                      max(dat$time[timeframe()]), 
+                      length = 8)
       xlab.str <- as.Date(as.POSIXct(xlab.int, origin = "1970-01-01"))
       h <- hist(uptime.sub, plot = FALSE, breaks = breaks)
       h$counts <- h$counts * ping.interval / 60 * 7 * 24 * 3600 / bin.width
@@ -63,6 +77,32 @@ shinyServer(
       axis(4)
       rug(uptime.sub, tick = 0.04, side = 1, col = "lightcoral")
       lines(d, lwd = 2, col = "lightcoral")
+    })
+    
+    # make this reactive later
+    coords <- reactive({
+      splitTimestamp(dat$time, midnight = input$midnight)
+    })
+    
+    output$matrix <- renderPlot({
+      n.cat <- which(input$cat == catnames)
+      xlab.int <- seq(min(dat$time[timeframe()]), 
+                      max(dat$time[timeframe()]), 
+                      length = 8)
+      xlab.str <- as.Date(as.POSIXct(xlab.int, origin = "1970-01-01"))
+      par(las = 1)
+      with(coords()[mat[,n.cat],], 
+           plot(prev.midnight, time.of.day, 
+           pch = "_", cex = 1, col = "lightcoral", 
+           main = paste(input$cat, "(by date and time of day)"), 
+           xlab = "", ylab = "Time of day", xaxt = "n", yaxt = "n", 
+           xlim = range(xlab.int), xaxs = "i", 
+           ylim = c(0,24), yaxs = "i", bty = "n")
+      )
+      axis(side = 2, at = seq(0, 24, by = 6))
+      axis(side = 4, at = seq(0, 24, by = 6))
+      axis(side = 1, at = xlab.int, labels = xlab.str)
+      abline(h = 24)
     })
   }
 )
