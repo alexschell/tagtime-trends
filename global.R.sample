@@ -6,53 +6,59 @@ ping.interval <- 45  # mean waiting time between pings in minutes (default 45)
 
 perl <- FALSE  # whether to use PERL syntax for regular expressions
 
-# A vector of tags or regular expressions to display data of
-tags <- c(
+# Tags or regular expressions to display data of
+regexes <- c(  #CHANGEME
   "prod3", 
   "prod0", 
   "proj|code|stats| r | ml |igf|auto|website|write", 
-  "auto", 
   "school|class|hw", 
+  "auto", 
   "work", 
   "slp", 
-  "drive", 
   "social|im", 
+  "outside|garden", 
   "email|sms|phonecall", 
+  "drive", 
   "favor", 
   "net", 
-  "tagtime|pfeedback", 
-  "outside|garden")  # CHANGEME
+  "tagtime|pfeedback|kcal", 
+  "stand", 
+  "sit |drive")
 
-# Vector of names for the elements of the tags vector
-choices <- c(
+# Names for the selection menu
+catnames <- c(  #CHANGEME
   "Productivity", 
   "Wasted time", 
   "Projects", 
-  "Autodidacticism", 
   "School", 
+  "Autodidacticism", 
   "Work", 
   "Sleep", 
-  "Driving", 
   "Social time", 
+  "Time spent outside", 
   "Communication", 
+  "Driving", 
   "Favors", 
   "Web browsing", 
   "Self tracking", 
-  "Time spent outside")  # CHANGEME
+  "Standing", 
+  "Sitting")
 
-# Vector of descriptions for the elements of the tags vector
-descriptions <- c(
+# Category descriptions
+descriptions <- c(  #CHANGEME
   "Productive time in domains such as personal projects, school, and work (less than full attention doesn't count)", 
   "Things like Netflix, aimless web browsing, Facebook, and daydreaming", 
   "Personal projects including autodidacticism, coding, statistics, writing, and so on (school or work don't count)", 
-  "Focused learning from books, tutorials, online lectures, and the like (school doesn't count)", 
   "Class time, homework, and studying", 
+  "Focused learning from books, tutorials, online lectures, and the like (school doesn't count)", 
   "Gainful employment", 
   "zzZZZzz (includes daytime naps)", 
-  "Time spent in a moving vehicle", 
   "Social interaction in real time", 
+  "What it says", 
   "Emails, phone calls, texting", 
+  "Time spent in a moving vehicle", 
   "Things done for other people", 
   "Aimless browsing, catching up on blogs, and so on (usually wasteful)", 
   "Time spent answering TagTime pings, entering percentile feedback data, or otherwise maintaining these", 
-  "What it says")  # CHANGEME
+  "Time spent on my feet (started tracking 2014-08-21)", 
+  "Time spent sitting (started tracking 2014-08-21; older entries include only driving)")

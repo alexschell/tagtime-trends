@@ -7,10 +7,10 @@ shinyUI(fluidPage(
         a("TagTime", href = "http://messymatters.com/tagtime/"), 
         " log file."),
     
-      selectInput("tag", 
+      selectInput("cat", 
         label = "Pick a category to look at:",
-        choices, 
-        selected = choices[1]), 
+        choices = catnames, 
+        selected = catnames[1]), 
       
       helpText(strong("Description: "), textOutput("description")), 
       
