@@ -41,15 +41,6 @@ shinyServer(
     })
     
     output$hist <- renderPlot({
-      # if (!is.null(input$daterange)) {
-        # starttime <- paste(input$daterange[1], "12:00:00")
-        # starttime <- as.numeric(as.POSIXct(starttime))
-        # endtime <- paste(as.Date(input$daterange[2] + 1), "12:00:00")
-        # endtime <- as.numeric(as.POSIXct(endtime))
-        # timeframe <- dat$time >= starttime & dat$time < endtime
-      # } else {
-        # timeframe <- rep(TRUE, nrow(dat))
-      # }
       n.breaks <- as.numeric(input$n.bins) + 1
       breaks <- seq(min(dat$time[timeframe()]), 
                     max(dat$time[timeframe()]), 
@@ -79,9 +70,8 @@ shinyServer(
       lines(d, lwd = 2, col = "lightcoral")
     })
     
-    # make this reactive later
     coords <- reactive({
-      splitTimestamp(dat$time, midnight = input$midnight)
+      splitTimestamp(dat$time, midnight = input$midnight, tz = "EST5EDT")
     })
     
     output$matrix <- renderPlot({
@@ -99,10 +89,50 @@ shinyServer(
            xlim = range(xlab.int), xaxs = "i", 
            ylim = c(0,24), yaxs = "i", bty = "n")
       )
-      axis(side = 2, at = seq(0, 24, by = 6))
-      axis(side = 4, at = seq(0, 24, by = 6))
+      # ylabels only work properly for custom midnights in 0:6
+      if (input$midnight == 0) {
+        ylabels <- seq(0, 24, by = 6)
+        yat <- seq(0, 24, by = 6)
+      } else {
+        mn <- as.numeric(input$midnight)
+        x <- c(mn:24, 1:mn)
+        x <- x[2:(length(x) - 1)]
+        x <- x[x %% 6 == 0]
+        ylabels <- c(mn, x, mn)
+        yat <- ylabels - mn
+        yat[length(yat)] <- 24
+      }
+      axis(side = 2, at = yat, labels = ylabels)
+      axis(side = 4, at = yat, labels = ylabels)
       axis(side = 1, at = xlab.int, labels = xlab.str)
       abline(h = 24)
+    })
+    
+    # Note antialiasing doesn't work in the deployed version
+    output$xy <- renderPlot({
+      n.cat <- which(input$cat == catnames)
+      n.xcat <- which(input$xcat == catnames)
+      y <- sapply(unique(coords()$prev.midnight), 
+                  function(x) {
+                    index <- coords()$prev.midnight == x & 
+                      mat[,n.cat] & timeframe()
+                    nrow(coords()[index,]) * ping.interval / 60
+                  })
+      x <- sapply(unique(coords()$prev.midnight), 
+                  function(x) {
+                    index <- coords()$prev.midnight == x & 
+                      mat[,n.xcat] & timeframe()
+                    nrow(coords()[index,]) * ping.interval / 60
+                  })
+      if (input$jitter) {
+        y <- jitter(y, factor = 3)
+        x <- jitter(x, factor = 3)
+      }
+      plot(x, y, pch = 15, cex = 0.7, 
+           main = paste(input$cat, "vs.", tolower(input$xcat), 
+                        "(aggregated by day)"), 
+           xlab = paste(input$xcat, "(estimated hours)"), 
+           ylab = paste(input$cat, "(estimated hours)"))
     })
   }
 )
