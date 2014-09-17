@@ -1,11 +1,13 @@
 shinyUI(fluidPage(
-  titlePanel("Some things I do - tracked with TagTime"), 
+  titlePanel("Some things I do"), 
   
   sidebarLayout( 
     sidebarPanel(
       p("Display time use patterns from my ", 
         a("TagTime", href = "http://messymatters.com/tagtime/"), 
-        " log file."),
+        " log file. (See my ", 
+        a("GitHub repo", href = "http://github.com/alexschell/tagtime-trends"), 
+        " for the code.)"), 
     
       selectInput("cat", 
         label = "Pick a category to look at:",
@@ -17,16 +19,17 @@ shinyUI(fluidPage(
       uiOutput("daterangeUI"), 
       
       br(), 
-      strong("Graph options:"), 
+      strong("Graphing options:"), 
+      br(), 
       
       conditionalPanel(
         condition = "input.tabID == 1", 
-        selectInput(inputId = "n.bins",
+        selectInput(inputId = "n.bins_hist",
                     label = "Number of bins in the histogram",
                     choices = c(10, 15, 20, 30, 50),
                     selected = 15),
         
-        sliderInput("bandwidth", 
+        sliderInput("bandwidth_hist", 
                     label = "Density estimate smoothness",
                     min = 0.3, 
                     max = 1, 
@@ -34,24 +37,50 @@ shinyUI(fluidPage(
       ), 
       
       conditionalPanel(
-        condition = "input.tabID == 2", 
-        selectInput("midnight", 
-                    label = "Custom midnight", 
-                    choices = 0:6, 
-                    selected = 0)
-      ), 
-      
-      conditionalPanel(
         condition = "input.tabID == 3", 
         selectInput("xcat", 
                     label = "Independent variable",
                     choices = catnames, 
-                    selected = catnames[2]), 
+                    selected = catnames[7]), 
         checkboxInput("jitter", 
                       label = "Add jittering", 
-                      value = TRUE)
+                      value = TRUE), 
+        selectInput("ccat", 
+                    label = "Conditioning variable for trellis plot (optional)", 
+                    choices = c("(None)", catnames), 
+                    selected = "(None)")
+      ), 
+      
+      conditionalPanel(
+        condition = "input.tabID == 4", 
+        radioButtons("weekend", 
+                     label = "", 
+                     choices = c("Weekdays only", 
+                                 "Weekends only", 
+                                 "All days"), 
+                     selected = "All days"), 
+        sliderInput("bandwidth_tod", 
+                    label = "Density estimate smoothness",
+                    min = 0.3, 
+                    max = 0.6, 
+                    value = 0.45)
+      ), 
+      
+      conditionalPanel(
+        condition = "input.tabID == 5", 
+        checkboxInput("ordered_week", 
+                     label = "Order chronologically within bins", 
+                     value = FALSE)
+      ), 
+      
+      conditionalPanel(
+        condition = "input.tabID == 2 | input.tabID == 4 | input.tabID == 5", 
+        selectInput("midnight", 
+                    label = "Custom midnight", 
+                    choices = 0:6, 
+                    selected = 0)
       )
-    ),
+    ), 
   
     # mainPanel(plotOutput("hist"))
     mainPanel(
@@ -59,6 +88,8 @@ shinyUI(fluidPage(
         tabPanel("Trend", plotOutput("hist"), value = 1), 
         tabPanel("Matrix", plotOutput("matrix"), value = 2), 
         tabPanel("Scatterplot", plotOutput("xy"), value = 3), 
+        tabPanel("Time of day", plotOutput("tod"), value = 4), 
+        tabPanel("Weekdays", plotOutput("week"), value = 5), 
         id = "tabID")
     )
   )

@@ -17,5 +17,23 @@ splitTimestamp <- function(timestamp, tz = "", midnight = 0, hrs = TRUE) {
   if (hrs) {
     timeofday <- timeofday / 3600
   }
-  data.frame(prev.midnight = mn, time.of.day = timeofday)
+  wday <- as.POSIXlt(timestamp, tz = tz, origin = "1970-01-01")$wday
+  wday[wday == 0] <- 7
+  data.frame(prev.midnight = mn, time.of.day = timeofday, wday = wday)
+}
+
+mkColor <- function(col, alpha = 1) {
+  col = col2rgb(col) / 255
+  rgb(col[1], col[2], col[3], alpha = alpha)
+}
+
+padding <- function(x, fraction = 0.1) {
+  span <- diff(range(x))
+  x.left <- x[x < min(x) + fraction * span]
+  x.right <- x[x > max(x) - fraction * span]
+  count.left <- length(x.left)
+  count.right <- length(x.right)
+  pad.left <- seq(min(x) - fraction * span, min(x) - 1, length = count.left)
+  pad.right <- seq(max(x) + 1, max(x) + fraction * span, length = count.right)
+  c(pad.left, x, pad.right)
 }
