@@ -8,8 +8,15 @@ shinyServer(
     timestamps <- x[[1]]
     matches <- x[[2]]
     
-    output$description <- renderText({
-      descriptions[which(input$cat == catnames)]
+    output$description <- renderUI({
+      helpText(descriptions[which(input$cat == catnames)])
+    })
+    
+    output$legend <- renderUI({
+      helpText(
+        strong("Color coding:"), 
+        div(input$cat, style = "color:#0080FF"), 
+        div(input$cat2, style = "color:#F08080")) # lightcoral
     })
     
     output$daterangeUI <- renderUI({
@@ -62,11 +69,11 @@ shinyServer(
         at <- lab - mn
         at[length(at)] <- 24
       }
-      data.frame(at = at, lab = lab)  # naming
+      data.frame(at = at, lab = lab)
     })
     
     coords <- reactive({
-      splitTimestamp(timestamps, midnight = input$midnight, tz = "EST5EDT")
+      splitTimestamp(timestamps, midnight = as.numeric(input$midnight), tz = "EST5EDT")
     })
     
     output$hist <- renderPlot({
@@ -83,46 +90,57 @@ shinyServer(
                                "Hours per week" = 7, 
                                "Hours per day" = 1), 
                xaxs = date.axis(), 
-               bandwidth = input$bandwidth.hist, 
-               padding = 0.1)
+               bandwidth = input$bandwidth.hist)
     })
     
     output$matrix <- renderPlot({
       n.cat <- which(input$cat == catnames)
       coords <- coords()[timeframe() & matches[,n.cat],]
-        # timeframe() not necessary
       par(las = 1)
-      matrixPlot(catname = input$cat, 
-                 dates = coords$prev.midnight, 
+      matrixPlot(dates = coords$prev.midnight, 
                  timesofday = coords$timeofday, 
                  xaxs = date.axis(), 
                  yaxs = timeofday.axis())
+      if (input$addcat) {
+        n.cat2 <- which(input$cat2 == catnames)
+        coords2 <- coords()[timeframe() & matches[,n.cat2],]
+        matrixPlot(dates = coords2$prev.midnight, 
+                   timesofday = coords2$timeofday, 
+                   add = TRUE)
+        title(paste(input$cat, "and", tolower(input$cat2), 
+                    "(by date and time of day)"))
+      } else {
+        title(paste(input$cat, "(by date and time of day)"))
+      }
     })
     
     # Note antialiasing doesn't work in the deployed version
     output$scatter <- renderPlot({
       n.cat <- which(input$cat == catnames)
-      n.xcat <- which(input$xcat == catnames)
-      n.ccat <- which(input$ccat == catnames)
-        # integer(0) if ccat not in catnames
+      n.catx <- which(input$catx == catnames)
       
       # this is still very repetitive
       dates <- coords()$prev.midnight[timeframe()]
       y <- countPings(dates = dates,  
                       subset = matches[timeframe(), n.cat])
       x <- countPings(dates = dates, 
-                      subset = matches[timeframe(), n.xcat])
+                      subset = matches[timeframe(), n.catx])
       y <- y * ping.interval / 60
       x <- x * ping.interval / 60
       
-      if(input$ccat == "(None)") {
-        scatterPlot(x, y, z = NULL, input$jitter, 
-                    catname = c(input$xcat, input$cat))
+      if(!input$trellis) {
+        scatterPlot(x, y, z = NULL, 
+                    names = c(input$cat, input$catx), 
+                    jitter = input$jitter, 
+                    trellis = input$trellis)
       } else {
+        n.catc <- which(input$catc == catnames)
         z <- countPings(dates = dates, 
-                        subset = matches[timeframe(), n.ccat])
-        scatterPlot(x, y, z, input$jitter, 
-                    catname = c(input$xcat, input$cat, input$ccat))
+                        subset = matches[timeframe(), n.catc])
+        scatterPlot(x, y, z, 
+                    names = c(input$cat, input$catx, input$catc), 
+                    jitter = input$jitter, 
+                    trellis = input$trellis)
       }
     })
     
@@ -137,7 +155,7 @@ shinyServer(
       timeofdayPlot(catname = input$cat, 
                   timesofday = timesofday, 
                   xaxs = timeofday.axis(), 
-                  bandwidth = input$bandwidth.tod)  # naming
+                  bandwidth = input$bandwidth.tod)
     })
     
     output$week <- renderPlot({
@@ -147,9 +165,21 @@ shinyServer(
       weekPlot(dates = coords$prev.midnight, 
                timesofday = coords$timeofday, 
                wdays = coords$wday, 
-               chron = input$ordered.week, # naming
-               catname = input$cat, 
+               chron = input$ordered.week,
                yaxs = timeofday.axis())
+      if (input$addcat) {
+        n.cat2 <- which(input$cat2 == catnames)
+        coords2 <- coords()[timeframe() & matches[,n.cat2],]
+        weekPlot(dates = coords2$prev.midnight, 
+                 timesofday = coords2$timeofday, 
+                 wdays = coords2$wday, 
+                 chron = input$ordered.week, 
+                 add = TRUE)
+        title(paste(input$cat, "and", tolower(input$cat2), 
+                    "(by weekday and time of day)"))
+      } else {
+        title(paste(input$cat, "(by weekday and time of day)"))
+      }
     })
   }
 )

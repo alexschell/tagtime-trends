@@ -30,16 +30,17 @@ splitTimestamp <- function(timestamp, tz = "", midnight = 0, hrs = TRUE) {
   } else {
     midnight <- paste(midnight, ":00:00", sep = "")
   }
-  day <- as.Date(substr(as.POSIXct(timestamp, origin = "1970-01-01", tz = tz), 1, 10))
+  day <- as.Date(as.POSIXlt(timestamp, origin = "1970-01-01", tz = tz))
   mn <- as.numeric(as.POSIXct(paste(day, midnight), tz = tz))
   mn <- ifelse(mn > timestamp, 
                as.numeric(as.POSIXct(paste(as.Date(day - 1), midnight), tz = tz)), 
                mn)
   timeofday <- timestamp - mn
+  # or convert to POSIXlt and get time difference
   if (hrs) {
     timeofday <- timeofday / 3600
   }
-  wday <- as.POSIXlt(timestamp, tz = tz, origin = "1970-01-01")$wday
+  wday <- as.POSIXlt(mn, tz = tz, origin = "1970-01-01")$wday
   wday[wday == 0] <- 7
   data.frame(prev.midnight = mn, timeofday = timeofday, wday = wday)
 }
@@ -49,15 +50,15 @@ addAlpha <- function(col, alpha = 1) {
   rgb(col[1], col[2], col[3], alpha = alpha)
 }
 
-padding <- function(x, fraction) {
-  span <- diff(range(x))
-  x.left <- x[x < min(x) + fraction * span]
-  x.right <- x[x > max(x) - fraction * span]
-  count.left <- length(x.left)
-  count.right <- length(x.right)
-  pad.left <- seq(min(x) - fraction * span, min(x) - 1, length = count.left)
-  pad.right <- seq(max(x) + 1, max(x) + fraction * span, length = count.right)
-  c(pad.left, x, pad.right)
+padding <- function(xs, fraction) {
+  span <- diff(range(xs))
+  xs.left <- xs[xs < min(xs) + fraction * span]
+  xs.right <- xs[xs > max(xs) - fraction * span]
+  count.left <- length(xs.left)
+  count.right <- length(xs.right)
+  pad.left <- seq(min(xs) - fraction * span, min(xs) - 1, length = count.left)
+  pad.right <- seq(max(xs) + 1, max(xs) + fraction * span, length = count.right)
+  c(pad.left, xs, pad.right)
 }
 
 # can/do we want to/ rewrite this to work with normal timestamps
@@ -67,4 +68,9 @@ countPings <- function(dates, subset) {
          function(x) {
            length(dates[dates == x & subset])
          })
+}
+
+normalize <- function(xs) {
+  span <- diff(range(xs))
+  (xs - min(xs)) / span - 0.5
 }

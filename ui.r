@@ -14,9 +14,24 @@ shinyUI(fluidPage(
         choices = catnames, 
         selected = catnames[1]), 
       
-      helpText(textOutput("description")), 
+      uiOutput("description"), 
       
       uiOutput("daterangeUI"), 
+      
+      conditionalPanel(
+        condition = "input.tabID == 2 | input.tabID == 5", 
+        checkboxInput("addcat", 
+                      label = "Add another category to plot", 
+                      value = FALSE)
+      ), 
+      
+      conditionalPanel(
+        condition = "(input.tabID == 2 | input.tabID == 5) & input.addcat", 
+        selectInput("cat2", 
+                    label = "", 
+                    choices = catnames, 
+                    selected = catnames[2])
+      ), 
       
       br(), 
       strong("Graphing options:"), 
@@ -41,17 +56,24 @@ shinyUI(fluidPage(
       
       conditionalPanel(
         condition = "input.tabID == 3", 
-        selectInput("xcat", 
-                    label = "Independent variable", 
+        selectInput("catx", 
+                    label = "Independent variable:", 
                     choices = catnames, 
-                    selected = catnames[15]), 
+                    selected = catnames[2]), 
         checkboxInput("jitter", 
                       label = "Add jittering", 
                       value = TRUE), 
-        selectInput("ccat", 
-                    label = "Conditioning variable for trellis plot (optional)", 
-                    choices = c("(None)", catnames), 
-                    selected = "(None)")
+        checkboxInput("trellis", 
+                      label = "Condition on a third variable", 
+                      value = FALSE)
+      ), 
+      
+      conditionalPanel(
+        condition = "input.tabID == 3 & input.trellis", 
+        selectInput("catc", 
+                    label = "", 
+                    choices = catnames, 
+                    selected = catnames[3])
       ), 
       
       conditionalPanel(
@@ -89,10 +111,14 @@ shinyUI(fluidPage(
       tabsetPanel(type = "tabs", 
         tabPanel("Trend", plotOutput("hist"), value = 1), 
         tabPanel("Matrix", plotOutput("matrix"), value = 2), 
-        tabPanel("Scatterplot", plotOutput("scatter"), value = 3), 
         tabPanel("Time of day", plotOutput("timeofday"), value = 4), 
         tabPanel("Weekdays", plotOutput("week"), value = 5), 
-        id = "tabID")
+        tabPanel("Scatterplot", plotOutput("scatter"), value = 3), 
+        id = "tabID"), 
+      conditionalPanel(
+        condition = "(input.tabID == 2 | input.tabID == 5) & input.addcat", 
+        uiOutput("legend")
+      )
     )
   )
 ))

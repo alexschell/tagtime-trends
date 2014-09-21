@@ -3,7 +3,7 @@
 require("lattice")
 
 histPlot <- function(catname, times.all, times.sub, 
-                     n.bins, units, xaxs, bandwidth, padding) {
+                     n.bins, units, xaxs, bandwidth, padding = 0.1) {
   n.breaks <- as.numeric(n.bins) + 1
   breaks <- seq(xaxs$at[1], xaxs$at[nrow(xaxs)], length = n.breaks)
   bin.width <- diff(breaks[1:2])  # histogram bin width in seconds
@@ -15,7 +15,8 @@ histPlot <- function(catname, times.all, times.sub,
   # add some padding to times.all to avoid density going to zero at extremes:
   times.all.padded <- padding(times.all, fraction = padding)
   d <- density(times.all.padded, adjust = bandwidth)
-  d$y <- d$y * length(times.all.padded) * ping.interval / 60 * units * 24 * 3600
+  d$y <- d$y * length(times.all.padded) * ping.interval / 60 * 
+         units * 24 * 3600
     # scale density to plot
   d.range <- d$x >= min(times.all) & d$x <= max(times.all)
   
@@ -34,45 +35,52 @@ histPlot <- function(catname, times.all, times.sub,
   )
 }
 
-matrixPlot <- function(catname, dates, timesofday, xaxs, yaxs) {
-  list(
-    plot(dates, timesofday, 
-         pch = "+", cex = 0.75, col = addAlpha("#0080ff", 0.5), 
-         main = paste(catname, "(by date and time of day)"), 
-         xlab = "", ylab = "Time of day", xaxt = "n", yaxt = "n", 
-         xlim = range(xaxs$at), xaxs = "i", 
-         ylim = c(0,24), yaxs = "i", bty = "n"), 
-    axis(side = 2, at = yaxs$at, labels = yaxs$lab), 
-    axis(side = 4, at = yaxs$at, labels = yaxs$lab), 
-    axis(side = 1, at = xaxs$at, labels = xaxs$lab), 
-    abline(h = 24)
-  )
+matrixPlot <- function(dates, timesofday, 
+                       xaxs = NULL, yaxs = NULL, add = FALSE) {
+  if (!add) {
+    list(
+      plot(dates, timesofday, 
+           pch = "+", cex = 0.75, col = addAlpha("#0080ff", 0.5), main = "", 
+           xlab = "", ylab = "Time of day", xaxt = "n", yaxt = "n", 
+           xlim = range(xaxs$at), xaxs = "i", 
+           ylim = c(0,24), yaxs = "i", bty = "n"), 
+      axis(side = 2, at = yaxs$at, labels = yaxs$lab), 
+      axis(side = 4, at = yaxs$at, labels = yaxs$lab), 
+      axis(side = 1, at = xaxs$at, labels = xaxs$lab), 
+      abline(h = 24)
+    )
+  } else {
+    list(
+      points(dates, timesofday, 
+             pch = "+", cex = 0.75, col = addAlpha("lightcoral", 0.5))
+    )
+  }
 }
 
-scatterPlot <- function(x, y, z = NULL, jitter, catname, panels = 4) {
+scatterPlot <- function(x, y, z = NULL, names, jitter, trellis, 
+                        plotTitle, panels = 4) {
   if (jitter) {
     y <- jitter(y, factor = 2)
     x <- jitter(x, factor = 2)
   }
-  if(is.null(z)) {
+  if(!trellis) {
     formula <- y ~ x
-    plotTitle <- paste(catname[2], "vs.", tolower(catname[1]), 
+    plotTitle <- paste(names[1], "vs.", tolower(names[2]), 
                        "(aggregated by day)")
-    mystrip <- FALSE
+    strip <- FALSE
   } else {
     formula <- y ~ x | equal.count(z, panels, overlap = 0.05)
-    # ugly label in trellis plot... look at options
-    plotTitle <- paste(catname[2], " vs. ", tolower(catname[1]), 
-                       " (conditioned on", tolower(catname[3]), 
+    plotTitle <- paste(names[1], " vs. ", tolower(names[2]), 
+                       " (conditioned on ", tolower(names[3]), 
                        ")", sep = "")
-    stripLabels <- rep(paste(catname[3], "(approximate quantiles)"), panels)
-    mystrip <- strip.custom(factor.levels = stripLabels, 
+    stripLabels <- rep(paste(names[3], "(approximate quantiles)"), panels)
+    strip <- strip.custom(factor.levels = stripLabels, 
                             strip.levels = TRUE, strip.names = FALSE)
   }
   xyplot(formula, pch = "+", cex = 2, alpha = 0.5, main = plotTitle, 
-         xlab = paste(catname[1], "(estimated hours)"), 
-         ylab = paste(catname[2], "(estimated hours)"), 
-         strip = mystrip)
+         xlab = paste(names[2], "(estimated hours)"), 
+         ylab = paste(names[1], "(estimated hours)"), 
+         strip = strip)
 }
 
 timeofdayPlot <- function(catname, timesofday, xaxs, bandwidth) {
@@ -99,32 +107,30 @@ timeofdayPlot <- function(catname, timesofday, xaxs, bandwidth) {
   )
 }
 
-weekPlot <- function(dates, timesofday, wdays, chron, catname, yaxs) {
-  # wrongly handles custom midnight changes
-  # look at splitTimestamps()
-  # also doesn't always do axes well -- rely on hr.axis() more ?
+weekPlot <- function(dates, timesofday, wdays, chron, 
+                     yaxs = NULL, add = FALSE) {
   if (chron) {
-    # clarify a bit, explain
-    daterange <- range(dates)
-    date.offset <- dates - min(dates)
-    date.offset <- date.offset / diff(range(dates))
-    date.offset <- date.offset * 0.5 - 0.25
-    wdays <- wdays + date.offset
+    wdays <- wdays + normalize(dates) * 0.5
   } else {
     wdays <- jitter(wdays, factor = 1)
   }
   
-  list(
-    plot(wdays, 
-         timesofday, pch = "+", cex = 0.75, 
-         col = addAlpha("#0080ff", 0.5),
-         yaxt = "n", xaxt = "n", 
-         main = paste(catname, "(by weekday and time of day)"), 
-         ylab = "Time of day", xlab = ""), 
-    axis(side = 1, at = 1:7, 
-         labels = c("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")), 
-    axis(side = 2, at = yaxs$at, labels = yaxs$lab), 
-    axis(side = 4, at = yaxs$at, labels = yaxs$lab)
-  )
+  if (!add) {
+    list(
+      plot(wdays, timesofday, pch = "+", cex = 0.75, 
+           col = addAlpha("#0080ff", 0.5),
+           yaxt = "n", xaxt = "n", main = "", 
+           ylab = "Time of day", ylim = c(0, 24), 
+           xlab = "", xlim = c(1, 7)), 
+      axis(side = 1, at = 1:7, 
+           labels = c("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")), 
+      axis(side = 2, at = yaxs$at, labels = yaxs$lab), 
+      axis(side = 4, at = yaxs$at, labels = yaxs$lab)
+    )
+  } else {
+    list(
+      points(wdays, timesofday, pch = "+", cex = 0.75, 
+             col = addAlpha("lightcoral", 0.5))
+    )
+  }
 }
-
