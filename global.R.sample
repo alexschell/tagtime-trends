@@ -6,6 +6,8 @@ ping.interval <- 45  # mean waiting time between pings in minutes (default 45)
 
 perl <- FALSE  # whether to use PERL syntax for regular expressions
 
+timezone <- "America/Los_Angeles"
+
 # Tags or regular expressions to display data of
 regexes <- c(  #CHANGEME
   "prod3", 

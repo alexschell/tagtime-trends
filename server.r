@@ -4,14 +4,16 @@ source("plotting.R")
 shinyServer(
   function(input, output) {
 
-    x <- parseLogfile(logfile.url, regexes, perl)
-    timestamps <- x[[1]]
-    matches <- x[[2]]
+    data <- parseLogfile(logfile.url, regexes, perl)
+    timestamps <- data[[1]]
+    matches <- data[[2]]
+    
     
     output$description <- renderUI({
       helpText(descriptions[which(input$cat == catnames)])
     })
     
+    # Color coded legend (matrix, weekday if input$addcat is TRUE)
     output$legend <- renderUI({
       helpText(
         strong("Color coding:"), 
@@ -19,6 +21,7 @@ shinyServer(
         div(input$cat2, style = "color:#F08080")) # lightcoral
     })
     
+    # Reactive date range UI (default: log file span)
     output$daterangeUI <- renderUI({
       dateRangeInput("daterange", 
         label = "Time frame to display:", 
@@ -27,13 +30,9 @@ shinyServer(
       )
     })
     
-    output$midnightUI <- renderUI({
-      selectInput("midnight", 
-                  label = "Custom midnight", 
-                  choices = 0:6, 
-                  selected = 0)
-    })
     
+    # Boolean vector indicating for every ping whether it is in the
+    # range of input$daterange
     timeframe <- reactive({
       if (!is.null(input$daterange)) {
         starttime <- paste(input$daterange[1], "00:00:00")
@@ -47,6 +46,7 @@ shinyServer(
       timeframe
     })
     
+    # Computes date axis from timeframe()
     date.axis <- reactive({
       at <- seq(min(timestamps[timeframe()]), 
                  max(timestamps[timeframe()]), 
@@ -55,8 +55,10 @@ shinyServer(
       data.frame(at = at, lab = lab)
     })
     
+    # Computes 0 - 24 time of day axis from input$midnight
+    #
+    # only works properly for input$midnight in 0:6
     timeofday.axis <- reactive({
-      # only works properly for input$midnight in 0:6
       mn <- as.numeric(input$midnight)
       if (mn == 0) {
         lab <- seq(0, 24, by = 6)
@@ -72,9 +74,13 @@ shinyServer(
       data.frame(at = at, lab = lab)
     })
     
+    # For every timestamp, computes timestamp of most recent past 
+    # custom midnight, hours since past custom midnight, and weekday
+    # (custom midnight adjusted)
     coords <- reactive({
-      splitTimestamp(timestamps, midnight = as.numeric(input$midnight), tz = "EST5EDT")
+      splitTimestamp(timestamps, midnight = as.numeric(input$midnight), tz = timezone)
     })
+    
     
     output$hist <- renderPlot({
       n.cat <- which(input$cat == catnames)
